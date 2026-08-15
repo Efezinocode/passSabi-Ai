@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ApiTutorRouteImport } from './routes/api/tutor'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppHomeRouteImport } from './routes/app/home'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHomeRoute = AppHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app/': typeof AppIndexRoute
 }
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app': typeof AppIndexRoute
 }
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app/': typeof AppIndexRoute
 }
@@ -88,10 +97,18 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/api/tutor'
+    | '/app/chat'
     | '/app/home'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/api/tutor' | '/app/home' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/api/tutor'
+    | '/app/chat'
+    | '/app/home'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -99,6 +116,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/api/tutor'
+    | '/app/chat'
     | '/app/home'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -155,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/home': {
       id: '/app/home'
       path: '/home'
@@ -166,11 +191,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppChatRoute: typeof AppChatRoute
   AppHomeRoute: typeof AppHomeRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppChatRoute: AppChatRoute,
   AppHomeRoute: AppHomeRoute,
   AppIndexRoute: AppIndexRoute,
 }
