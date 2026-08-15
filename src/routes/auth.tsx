@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 type Mode = "signin" | "signup" | "forgot" | "reset";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): { mode?: Mode } => ({
+  validateSearch: (search: Record<string, unknown>): { mode?: Mode | undefined } => ({
     mode: (["signin", "signup", "forgot", "reset"] as const).includes(
       search["mode"] as Mode,
     )
