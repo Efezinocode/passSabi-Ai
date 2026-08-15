@@ -19,6 +19,7 @@ import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppHomeRouteImport } from './routes/app/home'
 import { Route as AppPlanRouteImport } from './routes/app/plan'
 import { Route as AppPracticeRouteImport } from './routes/app/practice'
+import { Route as AppProgressRouteImport } from './routes/app/progress'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const AppPracticeRoute = AppPracticeRouteImport.update({
   path: '/practice',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProgressRoute = AppProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/progress': typeof AppProgressRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/progress': typeof AppProgressRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/progress': typeof AppProgressRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/progress'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/progress'
     | '/app'
   id:
     | '__root__'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/progress'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -225,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPracticeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/progress': {
+      id: '/app/progress'
+      path: '/progress'
+      fullPath: '/app/progress'
+      preLoaderRoute: typeof AppProgressRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -233,6 +252,7 @@ interface AppRouteChildren {
   AppHomeRoute: typeof AppHomeRoute
   AppPlanRoute: typeof AppPlanRoute
   AppPracticeRoute: typeof AppPracticeRoute
+  AppProgressRoute: typeof AppProgressRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -241,6 +261,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHomeRoute: AppHomeRoute,
   AppPlanRoute: AppPlanRoute,
   AppPracticeRoute: AppPracticeRoute,
+  AppProgressRoute: AppProgressRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
