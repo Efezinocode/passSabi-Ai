@@ -17,6 +17,7 @@ import { Route as ApiTutorRouteImport } from './routes/api/tutor'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppHomeRouteImport } from './routes/app/home'
+import { Route as AppPlanRouteImport } from './routes/app/plan'
 import { Route as AppPracticeRouteImport } from './routes/app/practice'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +60,11 @@ const AppHomeRoute = AppHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlanRoute = AppPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPracticeRoute = AppPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/api/tutor': typeof ApiTutorRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
+  '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
   '/app/': typeof AppIndexRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/api/tutor': typeof ApiTutorRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
+  '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
   '/app': typeof AppIndexRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/api/tutor': typeof ApiTutorRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
+  '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
   '/app/': typeof AppIndexRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/api/tutor'
     | '/app/chat'
     | '/app/home'
+    | '/app/plan'
     | '/app/practice'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/api/tutor'
     | '/app/chat'
     | '/app/home'
+    | '/app/plan'
     | '/app/practice'
     | '/app'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/api/tutor'
     | '/app/chat'
     | '/app/home'
+    | '/app/plan'
     | '/app/practice'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -199,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/plan': {
+      id: '/app/plan'
+      path: '/plan'
+      fullPath: '/app/plan'
+      preLoaderRoute: typeof AppPlanRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/practice': {
       id: '/app/practice'
       path: '/practice'
@@ -212,6 +231,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppChatRoute: typeof AppChatRoute
   AppHomeRoute: typeof AppHomeRoute
+  AppPlanRoute: typeof AppPlanRoute
   AppPracticeRoute: typeof AppPracticeRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -219,6 +239,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppChatRoute: AppChatRoute,
   AppHomeRoute: AppHomeRoute,
+  AppPlanRoute: AppPlanRoute,
   AppPracticeRoute: AppPracticeRoute,
   AppIndexRoute: AppIndexRoute,
 }
