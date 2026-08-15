@@ -68,8 +68,10 @@ function HomePage() {
         .from("practice_attempts")
         .select("id,subject,score,total,created_at")
         .order("created_at", { ascending: false })
-        .limit: undefined as never,
+        .limit(10);
+      return data ?? [];
     },
+
   });
 
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
