@@ -19,6 +19,7 @@ import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppHomeRouteImport } from './routes/app/home'
 import { Route as AppPlanRouteImport } from './routes/app/plan'
 import { Route as AppPracticeRouteImport } from './routes/app/practice'
+import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppProgressRouteImport } from './routes/app/progress'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const AppPracticeRoute = AppPracticeRouteImport.update({
   path: '/practice',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProgressRoute = AppProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/progress': typeof AppProgressRoute
   '/app/': typeof AppIndexRoute
 }
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/progress': typeof AppProgressRoute
   '/app': typeof AppIndexRoute
 }
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
   '/app/practice': typeof AppPracticeRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/progress': typeof AppProgressRoute
   '/app/': typeof AppIndexRoute
 }
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/profile'
     | '/app/progress'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/profile'
     | '/app/progress'
     | '/app'
   id:
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/app/home'
     | '/app/plan'
     | '/app/practice'
+    | '/app/profile'
     | '/app/progress'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPracticeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/progress': {
       id: '/app/progress'
       path: '/progress'
@@ -252,6 +271,7 @@ interface AppRouteChildren {
   AppHomeRoute: typeof AppHomeRoute
   AppPlanRoute: typeof AppPlanRoute
   AppPracticeRoute: typeof AppPracticeRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppProgressRoute: typeof AppProgressRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -261,6 +281,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHomeRoute: AppHomeRoute,
   AppPlanRoute: AppPlanRoute,
   AppPracticeRoute: AppPracticeRoute,
+  AppProfileRoute: AppProfileRoute,
   AppProgressRoute: AppProgressRoute,
   AppIndexRoute: AppIndexRoute,
 }
