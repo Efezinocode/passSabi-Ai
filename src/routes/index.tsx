@@ -106,8 +106,23 @@ function Landing() {
       </section>
 
       <footer className="mx-auto max-w-5xl px-5 pb-12 text-xs text-muted-foreground">
-        <div className="flex flex-col gap-2 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
           <Logo />
+          <div className="flex flex-wrap items-center gap-4">
+            <Link to="/about" className="hover:text-foreground">
+              About
+            </Link>
+            <Link to="/contact" className="hover:text-foreground">
+              Contact
+            </Link>
+            <FeedbackDialog
+              trigger={
+                <button type="button" className="hover:text-foreground">
+                  Give feedback
+                </button>
+              }
+            />
+          </div>
           <p>© {new Date().getFullYear()} PassSabi AI. Study honestly, pass confidently.</p>
         </div>
       </footer>
