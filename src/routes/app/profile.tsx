@@ -192,9 +192,25 @@ function ProfilePage() {
         </Button>
       </div>
 
+      <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <Link to="/about" className="hover:text-foreground">
+          About PassSabi AI
+        </Link>
+        <Link to="/contact" className="hover:text-foreground">
+          Contact & support
+        </Link>
+        <FeedbackDialog
+          trigger={
+            <button type="button" className="hover:text-foreground">
+              Send feedback
+            </button>
+          }
+        />
+      </div>
+
       <Button
         variant="ghost"
-        className="mt-6 w-full text-muted-foreground"
+        className="mt-4 w-full text-muted-foreground"
         onClick={async () => {
           await signOut();
           navigate({ to: "/auth" });
