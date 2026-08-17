@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,11 +45,21 @@ function Landing() {
     <main className="min-h-screen">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Logo />
-        <Link to="/auth">
-          <Button variant="ghost" size="sm">
-            Sign in
-          </Button>
-        </Link>
+        <nav className="flex items-center gap-1">
+          <Link to="/about">
+            <Button variant="ghost" size="sm">
+              About
+            </Button>
+          </Link>
+          <Link to="/contact">
+            <Button variant="ghost" size="sm">
+              Contact
+            </Button>
+          </Link>
+          <Link to="/auth">
+            <Button size="sm">Sign in</Button>
+          </Link>
+        </nav>
       </header>
 
       <section className="hero-gradient mx-4 rounded-3xl border border-border px-6 py-12 shadow-[var(--shadow-lift)] md:mx-auto md:max-w-5xl md:px-12 md:py-20">
@@ -96,8 +107,23 @@ function Landing() {
       </section>
 
       <footer className="mx-auto max-w-5xl px-5 pb-12 text-xs text-muted-foreground">
-        <div className="flex flex-col gap-2 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
           <Logo />
+          <div className="flex flex-wrap items-center gap-4">
+            <Link to="/about" className="hover:text-foreground">
+              About
+            </Link>
+            <Link to="/contact" className="hover:text-foreground">
+              Contact
+            </Link>
+            <FeedbackDialog
+              trigger={
+                <button type="button" className="hover:text-foreground">
+                  Give feedback
+                </button>
+              }
+            />
+          </div>
           <p>© {new Date().getFullYear()} PassSabi AI. Study honestly, pass confidently.</p>
         </div>
       </footer>
