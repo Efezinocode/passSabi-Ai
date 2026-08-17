@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useProfile, useSession } from "@/lib/auth";
 import { Logo } from "@/components/brand";
+import { FeedbackFab } from "@/components/feedback-dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app")({
