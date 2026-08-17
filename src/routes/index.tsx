@@ -44,11 +44,21 @@ function Landing() {
     <main className="min-h-screen">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Logo />
-        <Link to="/auth">
-          <Button variant="ghost" size="sm">
-            Sign in
-          </Button>
-        </Link>
+        <nav className="flex items-center gap-1">
+          <Link to="/about">
+            <Button variant="ghost" size="sm">
+              About
+            </Button>
+          </Link>
+          <Link to="/contact">
+            <Button variant="ghost" size="sm">
+              Contact
+            </Button>
+          </Link>
+          <Link to="/auth">
+            <Button size="sm">Sign in</Button>
+          </Link>
+        </nav>
       </header>
 
       <section className="hero-gradient mx-4 rounded-3xl border border-border px-6 py-12 shadow-[var(--shadow-lift)] md:mx-auto md:max-w-5xl md:px-12 md:py-20">
