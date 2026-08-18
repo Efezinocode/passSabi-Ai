@@ -86,6 +86,20 @@ function AppLayout() {
               </Link>
             );
           })}
+          {isAdmin ? (
+            <Link
+              to="/app/admin"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                pathname.startsWith("/app/admin")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/60",
+              )}
+            >
+              <ShieldCheck className="size-4" />
+              Admin
+            </Link>
+          ) : null}
         </nav>
       </aside>
 
@@ -93,7 +107,8 @@ function AppLayout() {
         <Outlet />
       </div>
 
-      <FeedbackFab />
+      {pathname.startsWith("/app/chat") ? null : <FeedbackFab />}
+
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur md:hidden">
         <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)]">
