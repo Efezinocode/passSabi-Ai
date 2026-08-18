@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Home,
   MessageCircle,
@@ -7,8 +9,10 @@ import {
   CalendarDays,
   BarChart3,
   User,
+  ShieldCheck,
 } from "lucide-react";
 import { useProfile, useSession } from "@/lib/auth";
+import { checkIsAdmin } from "@/lib/admin.functions";
 import { Logo } from "@/components/brand";
 import { FeedbackFab } from "@/components/feedback-dialog";
 import { cn } from "@/lib/utils";
@@ -16,6 +20,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
+
 
 const NAV = [
   { to: "/app/home", label: "Home", icon: Home },
