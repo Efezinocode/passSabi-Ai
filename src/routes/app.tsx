@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Home,
   MessageCircle,
@@ -7,8 +9,10 @@ import {
   CalendarDays,
   BarChart3,
   User,
+  ShieldCheck,
 } from "lucide-react";
 import { useProfile, useSession } from "@/lib/auth";
+import { checkIsAdmin } from "@/lib/admin.functions";
 import { Logo } from "@/components/brand";
 import { FeedbackFab } from "@/components/feedback-dialog";
 import { cn } from "@/lib/utils";
@@ -16,6 +20,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
+
 
 const NAV = [
   { to: "/app/home", label: "Home", icon: Home },
@@ -31,6 +36,14 @@ function AppLayout() {
   const { session, user, loading } = useSession();
   const { data: profile, isLoading: profileLoading } = useProfile(user);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdminFn = useServerFn(checkIsAdmin);
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: () => isAdminFn({}),
+  });
+
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
@@ -73,6 +86,20 @@ function AppLayout() {
               </Link>
             );
           })}
+          {isAdmin ? (
+            <Link
+              to="/app/admin"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                pathname.startsWith("/app/admin")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/60",
+              )}
+            >
+              <ShieldCheck className="size-4" />
+              Admin
+            </Link>
+          ) : null}
         </nav>
       </aside>
 
@@ -80,7 +107,8 @@ function AppLayout() {
         <Outlet />
       </div>
 
-      <FeedbackFab />
+      {pathname.startsWith("/app/chat") ? null : <FeedbackFab />}
+
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur md:hidden">
         <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)]">
