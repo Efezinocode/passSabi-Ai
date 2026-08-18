@@ -36,6 +36,14 @@ function AppLayout() {
   const { session, user, loading } = useSession();
   const { data: profile, isLoading: profileLoading } = useProfile(user);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdminFn = useServerFn(checkIsAdmin);
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: () => isAdminFn({}),
+  });
+
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
