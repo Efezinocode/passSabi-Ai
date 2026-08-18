@@ -17,6 +17,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ApiTutorRouteImport } from './routes/api/tutor'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppHomeRouteImport } from './routes/app/home'
 import { Route as AppPlanRouteImport } from './routes/app/plan'
@@ -64,6 +65,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/onboarding': typeof OnboardingRoute
   '/api/tutor': typeof ApiTutorRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/chat': typeof AppChatRoute
   '/app/home': typeof AppHomeRoute
   '/app/plan': typeof AppPlanRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/onboarding'
     | '/api/tutor'
+    | '/app/admin'
     | '/app/chat'
     | '/app/home'
     | '/app/plan'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/onboarding'
     | '/api/tutor'
+    | '/app/admin'
     | '/app/chat'
     | '/app/home'
     | '/app/plan'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/onboarding'
     | '/api/tutor'
+    | '/app/admin'
     | '/app/chat'
     | '/app/home'
     | '/app/plan'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/chat': {
       id: '/app/chat'
       path: '/chat'
@@ -307,6 +326,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppChatRoute: typeof AppChatRoute
   AppHomeRoute: typeof AppHomeRoute
   AppPlanRoute: typeof AppPlanRoute
@@ -317,6 +337,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppChatRoute: AppChatRoute,
   AppHomeRoute: AppHomeRoute,
   AppPlanRoute: AppPlanRoute,
