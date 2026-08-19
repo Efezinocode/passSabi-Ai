@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FeedbackDialog } from "@/components/feedback-dialog";
-import { LogOut } from "lucide-react";
+import { ChevronRight, LogOut, ShieldCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIsAdmin } from "@/lib/admin.functions";
 import { signOut, useInvalidateProfile, useProfile, useSession } from "@/lib/auth";
 import { EXAMS, EXPLANATION_LEVELS, SUBJECTS, CLASS_YEARS } from "@/lib/curriculum";
 import { Button } from "@/components/ui/button";
@@ -42,6 +45,13 @@ function ProfilePage() {
   const { user } = useSession();
   const { data: profile } = useProfile(user);
   const invalidateProfile = useInvalidateProfile();
+  const isAdminFn = useServerFn(checkIsAdmin);
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: () => isAdminFn({}),
+  });
 
   const [fullName, setFullName] = useState("");
   const [classYear, setClassYear] = useState("SS 3");
@@ -192,6 +202,19 @@ function ProfilePage() {
           {busy ? "Saving…" : "Save changes"}
         </Button>
       </div>
+
+      {isAdmin ? (
+        <Link to="/app/admin" className="surface-card mt-6 flex items-center gap-3 p-4">
+          <ShieldCheck className="size-5 text-highlight" />
+          <span className="flex-1">
+            <span className="block text-sm font-semibold">Admin dashboard</span>
+            <span className="block text-xs text-muted-foreground">
+              Registered users, emails and feedback
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </Link>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
         <Link to="/about" className="hover:text-foreground">
