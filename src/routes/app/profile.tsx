@@ -45,6 +45,13 @@ function ProfilePage() {
   const { user } = useSession();
   const { data: profile } = useProfile(user);
   const invalidateProfile = useInvalidateProfile();
+  const isAdminFn = useServerFn(checkIsAdmin);
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    retry: false,
+    queryFn: () => isAdminFn({}),
+  });
 
   const [fullName, setFullName] = useState("");
   const [classYear, setClassYear] = useState("SS 3");
