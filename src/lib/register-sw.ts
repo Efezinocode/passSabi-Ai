@@ -37,9 +37,36 @@ export function registerServiceWorker() {
     return;
   }
 
+  // Reload once when a newly installed service worker takes control, so an
+  // already-open app picks up the latest build instead of serving stale code.
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register(SW_URL, { scope: "/" }).catch(() => {
-      /* registration is best-effort */
-    });
+    void navigator.serviceWorker
+      .register(SW_URL, { scope: "/" })
+      .then((registration) => {
+        const checkForUpdate = () => {
+          void registration.update().catch(() => {
+            /* offline or transient network error */
+          });
+        };
+
+        // Check on launch, when the app is brought back to the foreground,
+        // and hourly while it stays open.
+        checkForUpdate();
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") checkForUpdate();
+        });
+        window.addEventListener("online", checkForUpdate);
+        window.setInterval(checkForUpdate, 60 * 60 * 1000);
+      })
+      .catch(() => {
+        /* registration is best-effort */
+      });
   });
 }
