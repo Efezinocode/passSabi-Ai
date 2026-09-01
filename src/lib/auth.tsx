@@ -8,14 +8,25 @@ export function useSession() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    let restored = false;
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      // Ignore null sessions emitted before storage has been read back,
+      // otherwise a refresh briefly looks signed-out and redirects to /auth.
+      if (!restored && !next && event !== "SIGNED_OUT") return;
+      restored = true;
       setSession(next);
       setLoading(false);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        restored = true;
+        setSession((prev) => prev ?? data.session);
+      })
+      .finally(() => setLoading(false));
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
