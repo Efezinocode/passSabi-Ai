@@ -84,21 +84,39 @@ function Onboarding() {
     if (profile?.onboarded) navigate({ to: "/app/home" });
   }, [profile, navigate]);
 
+  // Hydrate the form from anything already saved so a re-run never wipes
+  // previously chosen exam / class / subjects.
+  useEffect(() => {
+    if (!profile) return;
+    if (profile.education_level) setLevel(profile.education_level);
+    if (profile.class_year) setClassYear(profile.class_year);
+    if (profile.exam) setExam(profile.exam);
+    if (profile.exam_date) setExamDate(profile.exam_date);
+    if (profile.subjects?.length) setSubjects(profile.subjects);
+    if (profile.target_score) setTarget(profile.target_score);
+    if (profile.explanation_level) setExplanation(profile.explanation_level);
+  }, [profile]);
+
   async function save(skip = false) {
     if (!user) return;
+    // Even on skip, persist the current selections (defaults included) so a
+    // profile is never left with a blank exam / class / subject list.
+    const payload = {
+      education_level: level,
+      class_year: classYear,
+      exam,
+      exam_date: examDate || null,
+      subjects,
+      target_score: target || null,
+      explanation_level: explanation,
+      onboarded: true,
+    };
+    if (!skip && subjects.length === 0) {
+      toast.error("Pick at least one subject so your tutor knows what to help with.");
+      setStep(2);
+      return;
+    }
     setBusy(true);
-    const payload = skip
-      ? { onboarded: true }
-      : {
-          education_level: level,
-          class_year: classYear,
-          exam,
-          exam_date: examDate || null,
-          subjects,
-          target_score: target || null,
-          explanation_level: explanation,
-          onboarded: true,
-        };
     const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
     setBusy(false);
     if (error) {
