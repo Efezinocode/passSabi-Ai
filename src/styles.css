@@ -196,6 +196,9 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -203,7 +206,31 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
+
+  /* Prevent iOS/Android double-tap zoom on interactive elements. */
+  button,
+  a,
+  [role="button"],
+  [role="combobox"],
+  label,
+  summary {
+    touch-action: manipulation;
+  }
+
+  /* Mobile browsers auto-zoom when a focused field is under 16px. */
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select,
+    [contenteditable="true"] {
+      font-size: 16px !important;
+      line-height: 1.4;
+    }
+  }
+
 
   h1,
   h2,
