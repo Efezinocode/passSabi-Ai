@@ -7,7 +7,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
+// On Vercel (VERCEL=1 is set automatically in their build environment) we pin the
+// Nitro `vercel` preset so the server build lands in .vercel/output. Everywhere
+// else the default target is kept, so Lovable hosting is unaffected.
+const onVercel = !!process.env["VERCEL"];
+
 export default defineConfig({
+  ...(onVercel ? { nitro: { preset: "vercel" } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
