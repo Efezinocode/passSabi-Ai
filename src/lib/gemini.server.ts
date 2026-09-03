@@ -116,9 +116,8 @@ export async function geminiStructured<T>(opts: {
   schema: Record<string, unknown>;
   key: string;
 }): Promise<T> {
-  const res = await fetch(
-    `${BASE}/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(opts.key)}`,
-    {
+  const request = () =>
+    fetch(`${BASE}/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(opts.key)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -130,8 +129,15 @@ export async function geminiStructured<T>(opts: {
           responseSchema: opts.schema,
         },
       }),
-    },
-  );
+    });
+
+  // The model occasionally returns 503 (transient overload) — retry briefly.
+  let res = await request();
+  for (let attempt = 0; attempt < 2 && (res.status === 503 || res.status === 429); attempt++) {
+    await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    res = await request();
+  }
+
 
   await assertOk(res, "structured");
 
