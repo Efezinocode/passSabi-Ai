@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { buildSystemPrompt } from "@/lib/tutor-prompt";
+import { GeminiError, geminiKey, streamGeminiAsOpenAISSE } from "@/lib/gemini.server";
 
 type Body = {
   messages?: { role: "user" | "assistant"; content: string }[];
@@ -35,6 +36,25 @@ export const Route = createFileRoute("/api/tutor")({
           subjects: (body.context?.["subjects"] as string[]) ?? [],
           explanationLevel: (body.context?.["explanationLevel"] as string) ?? null,
         });
+
+        const key = geminiKey();
+        if (key) {
+          try {
+            const stream = await streamGeminiAsOpenAISSE({ system, messages, key });
+            return new Response(stream, {
+              headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+              },
+            });
+          } catch (err) {
+            const status = err instanceof GeminiError ? err.status : 500;
+            const message =
+              err instanceof GeminiError ? err.message : "The tutor could not respond. Please try again.";
+            return new Response(message, { status });
+          }
+        }
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",

@@ -1,3 +1,5 @@
+import { geminiKey, geminiStructured } from "./gemini.server";
+
 export type QuizQuestion = {
   question: string;
   options: string[];
@@ -28,6 +30,41 @@ export async function generateQuiz(params: Params): Promise<QuizQuestion[]> {
   ]
     .filter(Boolean)
     .join(" ");
+
+  const key = geminiKey();
+  if (key) {
+    const parsed = await geminiStructured<{ questions?: QuizQuestion[] }>({
+      system:
+        "You are an exam question writer for Nigerian secondary school students. Reply only with JSON matching the schema.",
+      prompt,
+      key,
+      schema: {
+        type: "object",
+        properties: {
+          questions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                question: { type: "string" },
+                options: { type: "array", items: { type: "string" } },
+                answerIndex: { type: "integer" },
+                explanation: { type: "string" },
+                topic: { type: "string" },
+              },
+              required: ["question", "options", "answerIndex", "explanation", "topic"],
+            },
+          },
+        },
+        required: ["questions"],
+      },
+    });
+    const questions = (parsed.questions ?? []).filter(
+      (q) => Array.isArray(q.options) && q.options.length === 4,
+    );
+    if (!questions.length) throw new Error("Could not generate questions right now.");
+    return questions;
+  }
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
