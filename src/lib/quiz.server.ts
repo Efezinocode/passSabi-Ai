@@ -1,3 +1,5 @@
+import { geminiKey, geminiStructured } from "./gemini.server";
+
 export type QuizQuestion = {
   question: string;
   options: string[];
