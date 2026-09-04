@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { buildSystemPrompt } from "@/lib/tutor-prompt";
 import { GeminiError, geminiKey, streamGeminiAsOpenAISSE } from "@/lib/gemini.server";
+import { GroqError, groqKey, streamGroqSSE } from "@/lib/groq.server";
+
 
 type Body = {
   messages?: { role: "user" | "assistant"; content: string }[];
