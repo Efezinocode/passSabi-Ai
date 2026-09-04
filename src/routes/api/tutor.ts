@@ -39,7 +39,6 @@ export const Route = createFileRoute("/api/tutor")({
           explanationLevel: (body.context?.["explanationLevel"] as string) ?? null,
         });
 
-        const key = geminiKey();
         const sseHeaders = {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",
