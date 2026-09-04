@@ -40,7 +40,28 @@ export const Route = createFileRoute("/api/tutor")({
         });
 
         const key = geminiKey();
+        const sseHeaders = {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        };
+
+        const gKey = groqKey();
+        if (gKey) {
+          try {
+            const stream = await streamGroqSSE({ system, messages, key: gKey });
+            return new Response(stream, { headers: sseHeaders });
+          } catch (err) {
+            const status = err instanceof GroqError ? err.status : 500;
+            const message =
+              err instanceof GroqError ? err.message : "The tutor could not respond. Please try again.";
+            return new Response(message, { status });
+          }
+        }
+
+        const key = geminiKey();
         if (key) {
+
           try {
             const stream = await streamGeminiAsOpenAISSE({ system, messages, key });
             return new Response(stream, {
