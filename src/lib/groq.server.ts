@@ -2,7 +2,7 @@
 // Preferred provider when GROQ_API_KEY is configured; call sites fall back to
 // Gemini, then the Lovable AI Gateway.
 
-export const GROQ_MODEL = "llama-3.3-70b-versatile";
+export const GROQ_MODEL = "openai/gpt-oss-120b";
 
 const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
