@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useSession } from "@/lib/auth";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState<null | "verify" | "reset">(null);
+  const [sent, setSent] = useState<null | "verify" | "reset" | "magic">(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
@@ -98,18 +97,24 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setBusy(false);
-      toast.error("Google sign-in failed. Try email instead.");
+  async function handleMagicLink() {
+    if (!email) {
+      toast.error("Enter your email first.");
       return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/app/home" });
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      setSent("magic");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send the sign-in link");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const copy = {
@@ -137,7 +142,16 @@ function AuthPage() {
 
         {sent ? (
           <div className="surface-card mt-8 p-5 text-sm">
-            {sent === "verify" ? (
+            {sent === "magic" ? (
+              <>
+                <p className="font-semibold">Sign-in link sent ✉️</p>
+                <p className="mt-2 text-muted-foreground">
+                  We emailed a one-tap sign-in link to{" "}
+                  <span className="text-foreground">{email}</span>. Open it on this device to
+                  continue — no password needed.
+                </p>
+              </>
+            ) : sent === "verify" ? (
               <>
                 <p className="font-semibold">Check your email 📩</p>
                 <p className="mt-2 text-muted-foreground">
@@ -225,11 +239,14 @@ function AuthPage() {
                 <Button
                   variant="secondary"
                   className="w-full"
-                  onClick={handleGoogle}
+                  onClick={handleMagicLink}
                   disabled={busy}
                 >
-                  Continue with Google
+                  Email me a sign-in link
                 </Button>
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  We&apos;ll send a link to your email — tap it and you&apos;re in.
+                </p>
               </>
             )}
 

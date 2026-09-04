@@ -1,4 +1,5 @@
 import { geminiKey, geminiStructured } from "./gemini.server";
+import { groqKey, groqStructured } from "./groq.server";
 
 export type QuizQuestion = {
   question: string;
@@ -30,6 +31,48 @@ export async function generateQuiz(params: Params): Promise<QuizQuestion[]> {
   ]
     .filter(Boolean)
     .join(" ");
+
+  const questionSchema = {
+    type: "object",
+    properties: {
+      questions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            question: { type: "string" },
+            options: { type: "array", items: { type: "string" } },
+            answerIndex: { type: "integer" },
+            explanation: { type: "string" },
+            topic: { type: "string" },
+          },
+          required: ["question", "options", "answerIndex", "explanation", "topic"],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["questions"],
+    additionalProperties: false,
+  } as const;
+
+  const system =
+    "You are an exam question writer for Nigerian secondary school students. Reply only with JSON matching the schema.";
+
+  const gKey = groqKey();
+  if (gKey) {
+    const parsed = await groqStructured<{ questions?: QuizQuestion[] }>({
+      system,
+      prompt,
+      key: gKey,
+      schemaName: "practice_questions",
+      schema: questionSchema as unknown as Record<string, unknown>,
+    });
+    const questions = (parsed.questions ?? []).filter(
+      (q) => Array.isArray(q.options) && q.options.length === 4,
+    );
+    if (!questions.length) throw new Error("Could not generate questions right now.");
+    return questions;
+  }
 
   const key = geminiKey();
   if (key) {
