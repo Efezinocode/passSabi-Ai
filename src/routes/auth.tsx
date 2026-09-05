@@ -7,6 +7,7 @@ import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Github } from "lucide-react";
 
 type Mode = "signin" | "signup" | "forgot" | "reset";
 
@@ -143,6 +144,16 @@ function AuthPage() {
       setBusy(false);
     }
   }
+
+  const handleGitHubSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) console.error('GitHub sign-in error:', error.message);
+  };
 
   const copy = {
     signin: { title: "Welcome back", cta: "Sign in" },
@@ -288,6 +299,15 @@ function AuthPage() {
                 </Button>
                 <Button
                   variant="secondary"
+                  className="w-full"
+                  onClick={handleGitHubSignIn}
+                  disabled={busy}
+                >
+                  <Github className="w-5 h-5" />
+                  Continue with GitHub
+                </Button>
+                <Button
+                  variant="secondary"
                   className="mt-2 w-full"
                   onClick={() => sendMagicLink()}
                   disabled={busy || cooldown > 0}
@@ -297,7 +317,7 @@ function AuthPage() {
                     : "Email me a sign-in link"}
                 </Button>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  We&apos;ll send a link to your email — tap it and you&apos;re in.
+                  We\'ll send a link to your email — tap it and you\'re in.
                 </p>
               </>
             )}
@@ -320,7 +340,7 @@ function AuthPage() {
                 </>
               )}
               {mode !== "signin" && (
-                <button className="underline" onClick={() => setMode("signin")}>
+                <button className="underline" onClick={() => setMode("signin")}> 
                   Back to sign in
                 </button>
               )}
