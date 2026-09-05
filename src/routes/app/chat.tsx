@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ChatMarkdown } from "@/components/chat-markdown";
 import { cn } from "@/lib/utils";
 
 type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
@@ -306,13 +307,19 @@ function ChatPage() {
             <div
               key={m.id}
               className={cn(
-                "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
                 m.role === "user"
-                  ? "ml-auto bg-primary text-primary-foreground"
+                  ? "ml-auto whitespace-pre-wrap bg-primary text-primary-foreground"
                   : "mr-auto border border-border bg-card",
               )}
             >
-              {m.content || "…"}
+              {m.role === "user" ? (
+                m.content
+              ) : m.content ? (
+                <ChatMarkdown content={m.content} />
+              ) : (
+                "…"
+              )}
             </div>
           ))}
         </div>
