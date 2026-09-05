@@ -240,3 +240,19 @@
     letter-spacing: -0.02em;
   }
 }
+
+/* Rendered tutor answers: markdown + KaTeX inside a chat bubble. */
+.chat-prose {
+  overflow-wrap: anywhere;
+}
+
+.chat-prose .katex {
+  font-size: 1.02em;
+}
+
+.chat-prose .katex-display {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
+}
