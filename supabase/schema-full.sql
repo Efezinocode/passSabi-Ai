@@ -118,6 +118,9 @@ CREATE POLICY "Anyone can submit feedback" ON public.feedback FOR INSERT TO anon
 DROP POLICY IF EXISTS "Users can read their own feedback" ON public.feedback;
 CREATE POLICY "Users can read their own feedback" ON public.feedback FOR SELECT TO authenticated
   USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Admins can view all feedback" ON public.feedback;
+CREATE POLICY "Admins can view all feedback" ON public.feedback FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
 
 -- ------------------------------------------------------- roles & has_role
 DO $$ BEGIN
