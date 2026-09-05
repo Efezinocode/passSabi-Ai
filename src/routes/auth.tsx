@@ -46,6 +46,13 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<null | "verify" | "reset" | "magic">(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
@@ -97,11 +104,12 @@ function AuthPage() {
     }
   }
 
-  async function handleMagicLink() {
+  async function sendMagicLink(resend = false) {
     if (!email) {
       toast.error("Enter your email first.");
       return;
     }
+    if (cooldown > 0) return;
     setBusy(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
@@ -110,9 +118,28 @@ function AuthPage() {
       });
       if (error) throw error;
       setSent("magic");
+      setCooldown(45);
+      if (resend) toast.success("New sign-in link sent.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send the sign-in link");
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start Google sign-in");
       setBusy(false);
     }
   }
@@ -167,9 +194,18 @@ function AuthPage() {
                 </p>
               </>
             )}
+            {sent === "magic" && (
+              <Button
+                className="mt-4 w-full"
+                onClick={() => sendMagicLink(true)}
+                disabled={busy || cooldown > 0}
+              >
+                {cooldown > 0 ? `Resend email in ${cooldown}s` : "Resend email"}
+              </Button>
+            )}
             <Button
               variant="secondary"
-              className="mt-4 w-full"
+              className="mt-2 w-full"
               onClick={() => {
                 setSent(null);
                 setMode("signin");
@@ -239,10 +275,26 @@ function AuthPage() {
                 <Button
                   variant="secondary"
                   className="w-full"
-                  onClick={handleMagicLink}
+                  onClick={handleGoogle}
                   disabled={busy}
                 >
-                  Email me a sign-in link
+                  <svg viewBox="0 0 48 48" className="size-4" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.8l7.8 6.1C12.3 13.9 17.6 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z" />
+                    <path fill="#FBBC05" d="M10.4 28.1a14.6 14.6 0 0 1 0-8.2l-7.8-6.1a23.6 23.6 0 0 0 0 20.4l7.8-6.1z" />
+                    <path fill="#34A853" d="M24 47.5c6.2 0 11.5-2.1 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.4 0-11.7-4.4-13.6-10.3l-7.8 6.1C6.5 42.1 14.6 47.5 24 47.5z" />
+                  </svg>
+                  Continue with Google
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="mt-2 w-full"
+                  onClick={() => sendMagicLink()}
+                  disabled={busy || cooldown > 0}
+                >
+                  {cooldown > 0
+                    ? `Try again in ${cooldown}s`
+                    : "Email me a sign-in link"}
                 </Button>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
                   We&apos;ll send a link to your email — tap it and you&apos;re in.

@@ -47,6 +47,23 @@ function AuthCallback() {
       if (data.session) finish();
     });
 
+    // OAuth (PKCE) returns ?code=...; detectSessionInUrl normally exchanges it,
+    // but exchange explicitly as a fallback. Also surface provider errors fast.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error")) {
+      setFailed(true);
+    } else {
+      const code = params.get("code");
+      if (code) {
+        supabase.auth
+          .exchangeCodeForSession(code)
+          .then(({ data, error }) => {
+            if (data?.session && !error) finish();
+          })
+          .catch(() => {});
+      }
+    }
+
     const timer = setTimeout(() => {
       if (!done) setFailed(true);
     }, 8000);
