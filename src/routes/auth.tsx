@@ -294,7 +294,7 @@ function AuthPage() {
                 </div>
 
                 {/* Social sign-in buttons inside a subtle card to match the design in the screenshot */}
-                <div className="surface-card mt-2 p-2 rounded-lg space-y-3">
+                <div className="surface-card mt-2 p-2 rounded-lg flex flex-col gap-3">
                   <Button
                     variant="secondary"
                     className="w-full"
