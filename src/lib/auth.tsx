@@ -1,36 +1,75 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useSession() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+/**
+ * A single app-wide auth store.
+ *
+ * The initial session restore is async (it reads storage and may refresh the
+ * token). Until that first read resolves, `loading` stays true so no screen
+ * can decide the user is signed out and bounce them to /auth.
+ */
+type AuthState = { session: Session | null; loading: boolean };
 
-  useEffect(() => {
-    let restored = false;
+const SERVER_STATE: AuthState = { session: null, loading: true };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
-      // Ignore null sessions emitted before storage has been read back,
-      // otherwise a refresh briefly looks signed-out and redirects to /auth.
-      if (!restored && !next && event !== "SIGNED_OUT") return;
+let state: AuthState = SERVER_STATE;
+let started = false;
+const listeners = new Set<() => void>();
+
+function setState(next: AuthState) {
+  if (next.session === state.session && next.loading === state.loading) return;
+  state = next;
+  listeners.forEach((l) => l());
+}
+
+function start() {
+  if (started || typeof window === "undefined") return;
+  started = true;
+
+  let restored = false;
+
+  supabase.auth.onAuthStateChange((event, next) => {
+    // Before the first restore resolves, a null session is just "not read
+    // back yet" — never treat it as signed out.
+    if (!restored && !next && event !== "SIGNED_OUT") return;
+    // A failed token refresh can emit a null session while storage still
+    // holds a valid one; only an explicit sign-out clears it.
+    if (restored && !next && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+    restored = true;
+    setState({ session: next, loading: false });
+  });
+
+  supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      const session = state.session ?? data.session;
       restored = true;
-      setSession(next);
-      setLoading(false);
+      setState({ session, loading: false });
+    })
+    .catch(() => {
+      restored = true;
+      setState({ session: state.session, loading: false });
     });
+}
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        restored = true;
-        setSession((prev) => prev ?? data.session);
-      })
-      .finally(() => setLoading(false));
+export function useSession() {
+  const snapshot = useSyncExternalStore(
+    (listener) => {
+      start();
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => state,
+    () => SERVER_STATE,
+  );
 
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  return { session, user: session?.user ?? null, loading };
+  return {
+    session: snapshot.session,
+    user: snapshot.session?.user ?? null,
+    loading: snapshot.loading,
+  };
 }
 
 export type Profile = {
