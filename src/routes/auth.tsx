@@ -146,13 +146,20 @@ function AuthPage() {
   }
 
   const handleGitHubSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) console.error('GitHub sign-in error:', error.message);
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      // OAuth will redirect on success
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start GitHub sign-in");
+      setBusy(false);
+    }
   };
 
   const copy = {
