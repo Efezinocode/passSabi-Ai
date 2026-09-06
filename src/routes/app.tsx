@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,8 +46,27 @@ function AppLayout() {
   });
 
 
+  // Never bounce to /auth on a single empty read: a hard refresh can resolve the
+  // stored session slightly late (async storage, or a token refresh in flight).
+  // Re-check once before deciding the user is really signed out.
+  const [confirmedSignedOut, setConfirmedSignedOut] = useState(false);
+
   useEffect(() => {
-    if (!loading && !session) navigate({ to: "/auth" });
+    if (loading || session) {
+      setConfirmedSignedOut(false);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled || data.session) return;
+      setConfirmedSignedOut(true);
+      navigate({ to: "/auth" });
+    }, 1200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [loading, session, navigate]);
 
   useEffect(() => {
