@@ -18,6 +18,7 @@ export const Route = createFileRoute("/")({
         content:
           "Understand topics, practice past-question style questions, plan your revision and track progress for WAEC, NECO, JAMB and school exams.",
       },
+      { name: "google-site-verification", content: "Mf2dahPoH0BTtR7LbX8cLjKeB5iDqpVoZl4-OnSvenU" },
     ],
   }),
   component: Landing,
