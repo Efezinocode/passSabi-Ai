@@ -293,11 +293,10 @@ function AuthPage() {
                   <span className="h-px flex-1 bg-border" />
                 </div>
 
-                {/* Social sign-in buttons inside a subtle card to match the design in the screenshot */}
-                <div className="surface-card mt-2 p-2 rounded-lg flex flex-col gap-3">
+                <div className="flex flex-col gap-3">
                   <Button
                     variant="secondary"
-                    className="w-full"
+                    className="w-full justify-center gap-2"
                     onClick={handleGoogle}
                     disabled={busy}
                     type="button"
@@ -313,29 +312,27 @@ function AuthPage() {
 
                   <Button
                     variant="secondary"
-                    className="w-full"
+                    className="w-full justify-center gap-2"
                     onClick={handleGitHubSignIn}
                     disabled={busy}
                     type="button"
                   >
-                    <Github className="w-5 h-5" />
+                    <Github className="size-4" />
                     Continue with GitHub
                   </Button>
-                </div>
 
-                <Button
-                  variant="secondary"
-                  className="mt-2 w-full"
-                  onClick={() => sendMagicLink()}
-                  disabled={busy || cooldown > 0}
-                  type="button"
-                >
-                  {cooldown > 0
-                    ? `Try again in ${cooldown}s`
-                    : "Email me a sign-in link"}
-                </Button>
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  We\'ll send a link to your email — tap it and you\'re in.
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-center gap-2"
+                    onClick={() => sendMagicLink()}
+                    disabled={busy || cooldown > 0}
+                    type="button"
+                  >
+                    {cooldown > 0 ? `Try again in ${cooldown}s` : "Email me a sign-in link"}
+                  </Button>
+                </div>
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  We&apos;ll send a link to your email — tap it and you&apos;re in.
                 </p>
               </>
             )}
