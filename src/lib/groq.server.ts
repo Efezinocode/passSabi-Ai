@@ -72,6 +72,7 @@ export async function groqStructured<T>(opts: {
   schema: Record<string, unknown>;
   key: string;
   schemaName?: string;
+  model?: string;
 }): Promise<T> {
   const request = () =>
     fetch(ENDPOINT, {
@@ -81,7 +82,7 @@ export async function groqStructured<T>(opts: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: opts.model ?? GROQ_MODEL,
         temperature: 0.8,
         messages: [
           { role: "system", content: opts.system },
