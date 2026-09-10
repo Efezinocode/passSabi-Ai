@@ -44,6 +44,7 @@ export async function streamGroqSSE(opts: {
   system: string;
   messages: ChatMessage[];
   key: string;
+  model?: string;
 }): Promise<ReadableStream<Uint8Array>> {
   const res = await fetch(ENDPOINT, {
     method: "POST",
@@ -52,7 +53,7 @@ export async function streamGroqSSE(opts: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: opts.model ?? GROQ_MODEL,
       stream: true,
       temperature: 0.7,
       messages: [{ role: "system", content: opts.system }, ...opts.messages],
