@@ -11,7 +11,11 @@ export function groqKey(): string | undefined {
   return key && key.trim() ? key.trim() : undefined;
 }
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type ChatMessage = { role: "user" | "assistant"; content: string | ContentPart[] };
 
 export class GroqError extends Error {
   status: number;
