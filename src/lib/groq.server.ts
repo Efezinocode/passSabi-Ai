@@ -11,7 +11,7 @@ export function groqKey(): string | undefined {
   return key && key.trim() ? key.trim() : undefined;
 }
 
-type ContentPart =
+export type ContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
