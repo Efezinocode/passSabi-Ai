@@ -1,346 +1,394 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
-import { buildSystemPrompt } from "@/lib/tutor-prompt";
-import {
-  GeminiError,
-  geminiKey,
-  streamGeminiAsOpenAISSE,
-} from "@/lib/gemini.server";
-import {
-  GroqError,
-  groqKey,
-  streamGroqSSE,
-} from "@/lib/groq.server";
-import { GROQ_VISION_MODEL, hasImage } from "@/lib/vision.server";
-import type { ContentPart } from "@/lib/chat-types";
+// Direct Google Generative Language API client (server-only).
+// Used when GEMINI_API_KEY is configured; otherwise call sites can fall back
+// to the secondary AI provider.
+//
+// Gemini 3.6 Flash is a stable, production-ready multimodal model.
+// It supports text and image input, structured outputs, and streaming.
+//
+// Google currently lists Gemini 3.6 Flash as a stable model with no announced
+// shutdown date. Keep the model ID centralized here so it can be upgraded
+// without changing call sites.
+//
+// Source:
+// https://ai.google.dev/gemini-api/docs/models
+//
+// This file accepts image content (ContentPart[]) so Gemini can act as a
+// real fallback for photo questions too, rather than making photo support
+// depend on a single provider.
 
-type Body = {
-  messages?: {
-    role: "user" | "assistant";
-    content: string | ContentPart[];
-  }[];
-  context?: Record<string, unknown>;
-};
+import type { ChatMessage } from "./chat-types";
 
-export const Route = createFileRoute("/api/tutor")({
-  server: {
-    handlers: {
-      POST: async ({ request }) => {
-        // ------------------------------------------------------------
-        // 1. AUTHENTICATION
-        // ------------------------------------------------------------
+export const GEMINI_MODEL = "gemini-3.6-flash";
 
-        const token = request.headers
-          .get("authorization")
-          ?.replace("Bearer ", "")
-          .trim();
+const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-        if (!token) {
-          return new Response("Unauthorized", {
-            status: 401,
-          });
-        }
+export function geminiKey(): string | undefined {
+  const key = process.env["GEMINI_API_KEY"];
+  return key && key.trim() ? key.trim() : undefined;
+}
 
-        const supabaseUrl = process.env["SUPABASE_URL"];
-        const supabaseKey = process.env["SUPABASE_PUBLISHABLE_KEY"];
+/**
+ * Splits a "data:image/jpeg;base64,...." URL into the format expected by
+ * Gemini's inlineData field.
+ */
+function dataUrlToInlineData(
+  url: string,
+): { mimeType: string; data: string } | null {
+  const match = /^data:([^;]+);base64,(.+)$/.exec(url);
 
-        if (!supabaseUrl || !supabaseKey) {
-          console.error("Supabase environment variables are missing.");
+  if (!match) return null;
 
-          return new Response(
-            "Server authentication is not configured correctly.",
-            {
-              status: 500,
-            },
+  return {
+    mimeType: match[1],
+    data: match[2],
+  };
+}
+
+/**
+ * Converts the application's ChatMessage format into Gemini's contents
+ * format while preserving both text and image parts.
+ */
+function toContents(messages: ChatMessage[]) {
+  return messages.map((m) => {
+    const role = m.role === "assistant" ? "model" : "user";
+
+    if (typeof m.content === "string") {
+      return {
+        role,
+        parts: [{ text: m.content }],
+      };
+    }
+
+    const parts = m.content.flatMap((part) => {
+      if (part.type === "text") {
+        return [{ text: part.text }];
+      }
+
+      const inline = dataUrlToInlineData(part.image_url.url);
+
+      return inline ? [{ inlineData: inline }] : [];
+    });
+
+    return {
+      role,
+      parts,
+    };
+  });
+}
+
+export class GeminiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "GeminiError";
+    this.status = status;
+  }
+}
+
+/**
+ * Converts an upstream Gemini HTTP error into a safe application-level
+ * error message.
+ *
+ * Detailed provider responses are logged server-side only and are never
+ * returned to the browser.
+ */
+async function assertOk(res: Response, what: string): Promise<void> {
+  if (res.ok) return;
+
+  const detail = await res.text().catch(() => "");
+
+  console.error(`Gemini ${what} error`, {
+    status: res.status,
+    detail,
+  });
+
+  if (res.status === 429) {
+    throw new GeminiError(
+      429,
+      "Too many requests right now. Please try again shortly.",
+    );
+  }
+
+  if (res.status === 400) {
+    throw new GeminiError(
+      400,
+      "The AI request was invalid. Please try again.",
+    );
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    throw new GeminiError(
+      500,
+      "The AI service is not configured correctly.",
+    );
+  }
+
+  if (res.status === 404) {
+    throw new GeminiError(
+      500,
+      "The requested AI model is unavailable.",
+    );
+  }
+
+  if (res.status === 408 || res.status === 504) {
+    throw new GeminiError(
+      504,
+      "The AI service took too long to respond. Please try again.",
+    );
+  }
+
+  if (res.status === 500 || res.status === 502 || res.status === 503) {
+    throw new GeminiError(
+      503,
+      "The AI service is temporarily unavailable. Please try again.",
+    );
+  }
+
+  throw new GeminiError(
+    500,
+    "The AI service could not respond. Please try again.",
+  );
+}
+
+/**
+ * Streams a Gemini answer and re-emits it in the OpenAI chat-completions
+ * SSE shape that the existing browser client already understands.
+ */
+export async function streamGeminiAsOpenAISSE(opts: {
+  system: string;
+  messages: ChatMessage[];
+  key: string;
+}): Promise<ReadableStream<Uint8Array>> {
+  const res = await fetch(
+    `${BASE}/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${encodeURIComponent(
+      opts.key,
+    )}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: opts.system }],
+        },
+        contents: toContents(opts.messages),
+      }),
+    },
+  );
+
+  await assertOk(res, "stream");
+
+  if (!res.body) {
+    throw new GeminiError(
+      500,
+      "The AI service returned no response.",
+    );
+  }
+
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  const reader = res.body.getReader();
+
+  let buffer = "";
+
+  /**
+   * Converts one Gemini SSE payload into the OpenAI-compatible SSE format
+   * expected by the browser client.
+   */
+  const processLine = (
+    line: string,
+    controller: ReadableStreamDefaultController<Uint8Array>,
+  ) => {
+    const trimmed = line.trim();
+
+    if (!trimmed.startsWith("data:")) return;
+
+    const payload = trimmed.slice(5).trim();
+
+    if (!payload || payload === "[DONE]") return;
+
+    try {
+      const chunk = JSON.parse(payload) as {
+        candidates?: {
+          content?: {
+            parts?: {
+              text?: string;
+            }[];
+          };
+        }[];
+      };
+
+      const text = (chunk.candidates?.[0]?.content?.parts ?? [])
+        .map((part) => part.text ?? "")
+        .join("");
+
+      if (!text) return;
+
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            choices: [
+              {
+                delta: {
+                  content: text,
+                },
+              },
+            ],
+          })}\n\n`,
+        ),
+      );
+    } catch (error) {
+      // Gemini may occasionally send an incomplete/non-JSON SSE line.
+      // Keep the stream alive instead of failing the entire response.
+      console.warn("Ignoring malformed Gemini SSE payload", error);
+    }
+  };
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { value, done } = await reader.read();
+
+        if (done) {
+          // IMPORTANT:
+          // Process any final partial line left in the buffer before
+          // closing the stream. Without this, the last Gemini chunk
+          // could be silently lost.
+          if (buffer.trim()) {
+            processLine(buffer, controller);
+          }
+
+          controller.enqueue(
+            encoder.encode("data: [DONE]\n\n"),
           );
+
+          controller.close();
+          return;
         }
 
-        const supabase = createClient(
-          supabaseUrl,
-          supabaseKey,
-          {
-            auth: {
-              persistSession: false,
-              autoRefreshToken: false,
-            },
-          },
-        );
-
-        const { data: userData, error: userError } =
-          await supabase.auth.getUser(token);
-
-        if (userError || !userData?.user) {
-          return new Response("Unauthorized", {
-            status: 401,
-          });
-        }
-
-        // ------------------------------------------------------------
-        // 2. PARSE REQUEST BODY
-        // ------------------------------------------------------------
-
-        let body: Body;
-
-        try {
-          body = (await request.json()) as Body;
-        } catch (error) {
-          console.error("Invalid tutor request JSON:", error);
-
-          return new Response("Invalid request body", {
-            status: 400,
-          });
-        }
-
-        const messages = (body.messages ?? []).slice(-20);
-
-        if (!messages.length) {
-          return new Response("No messages", {
-            status: 400,
-          });
-        }
-
-        const containsImage = hasImage(messages);
-
-        // ------------------------------------------------------------
-        // 3. BUILD SYSTEM PROMPT
-        // ------------------------------------------------------------
-
-        const system = buildSystemPrompt({
-          mode: String(
-            body.context?.["mode"] ?? "tutor",
-          ),
-
-          name:
-            (body.context?.["name"] as string) ??
-            null,
-
-          exam:
-            (body.context?.["exam"] as string) ??
-            null,
-
-          classYear:
-            (body.context?.["classYear"] as string) ??
-            null,
-
-          subject:
-            (body.context?.["subject"] as string) ??
-            null,
-
-          subjects:
-            (body.context?.["subjects"] as string[]) ??
-            [],
-
-          explanationLevel:
-            (body.context?.["explanationLevel"] as string) ??
-            null,
+        buffer += decoder.decode(value, {
+          stream: true,
         });
 
-        // ------------------------------------------------------------
-        // 4. COMMON SSE HEADERS
-        // ------------------------------------------------------------
+        const lines = buffer.split("\n");
 
-        const sseHeaders = {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache, no-transform",
-          Connection: "keep-alive",
-          "X-Accel-Buffering": "no",
-        };
+        // Keep the incomplete final line for the next network chunk.
+        buffer = lines.pop() ?? "";
 
-        // ============================================================
-        // PROVIDER 1 — GROQ
-        // ============================================================
-
-        const gKey = groqKey();
-
-        if (gKey) {
-          try {
-            const stream = await streamGroqSSE({
-              system,
-              messages,
-              key: gKey,
-
-              // Use the vision model only when an image exists.
-              model: containsImage
-                ? GROQ_VISION_MODEL
-                : undefined,
-            });
-
-            return new Response(stream, {
-              headers: sseHeaders,
-            });
-          } catch (err) {
-            const status =
-              err instanceof GroqError
-                ? err.status
-                : 500;
-
-            const message =
-              err instanceof GroqError
-                ? err.message
-                : "The tutor could not respond. Please try again.";
-
-            // If Gemini exists, keep going.
-            if (geminiKey()) {
-              console.error(
-                "Groq failed. Falling back to Gemini.",
-                {
-                  status,
-                  message,
-                  containsImage,
-                },
-              );
-            } else {
-              return new Response(message, {
-                status,
-              });
-            }
-          }
+        for (const line of lines) {
+          processLine(line, controller);
         }
+      } catch (error) {
+        console.error("Gemini stream error", error);
 
-        // ============================================================
-        // PROVIDER 2 — GEMINI
-        // ============================================================
-
-        const gKeyFallback = geminiKey();
-
-        if (gKeyFallback) {
-          try {
-            const stream =
-              await streamGeminiAsOpenAISSE({
-                system,
-                messages,
-                key: gKeyFallback,
-              });
-
-            return new Response(stream, {
-              headers: sseHeaders,
-            });
-          } catch (err) {
-            const status =
-              err instanceof GeminiError
-                ? err.status
-                : 500;
-
-            const message =
-              err instanceof GeminiError
-                ? err.message
-                : "The tutor could not respond. Please try again.";
-
-            console.error(
-              "Gemini provider failed.",
-              {
-                status,
-                message,
-                containsImage,
-              },
-            );
-
-            // Do NOT immediately return here.
-            // We still have one final provider available.
-          }
-        }
-
-        // ============================================================
-        // PROVIDER 3 — LOVABLE AI GATEWAY
-        // ============================================================
-
-        const lovableKey =
-          process.env["LOVABLE_API_KEY"];
-
-        if (!lovableKey) {
-          return new Response(
-            "No AI provider is currently configured.",
-            {
-              status: 503,
-            },
-          );
-        }
-
-        try {
-          const upstream = await fetch(
-            "https://ai.gateway.lovable.dev/v1/chat/completions",
-            {
-              method: "POST",
-
-              headers: {
-                Authorization: `Bearer ${lovableKey}`,
-                "Content-Type": "application/json",
-              },
-
-              body: JSON.stringify({
-                model: "google/gemini-3.5-flash",
-                stream: true,
-
-                messages: [
-                  {
-                    role: "system",
-                    content: system,
-                  },
-                  ...messages,
-                ],
-              }),
-            },
-          );
-
-          if (upstream.status === 429) {
-            return new Response(
-              "Too many requests right now. Please try again shortly.",
-              {
-                status: 429,
-              },
-            );
-          }
-
-          if (upstream.status === 402) {
-            return new Response(
-              "AI credits are exhausted. Please try again later.",
-              {
-                status: 402,
-              },
-            );
-          }
-
-          if (!upstream.ok || !upstream.body) {
-            const detail = await upstream
-              .text()
-              .catch(() => "");
-
-            console.error(
-              "Lovable AI gateway error",
-              {
-                status: upstream.status,
-                detail,
-              },
-            );
-
-            return new Response(
-              "The tutor could not respond. Please try again.",
-              {
-                status: 500,
-              },
-            );
-          }
-
-          return new Response(
-            upstream.body,
-            {
-              headers: sseHeaders,
-            },
-          );
-        } catch (error) {
-          console.error(
-            "Lovable AI gateway request failed:",
-            error,
-          );
-
-          return new Response(
-            "The tutor could not respond. Please try again.",
-            {
-              status: 500,
-            },
-          );
-        }
-      },
+        controller.error(
+          error instanceof GeminiError
+            ? error
+            : new GeminiError(
+                500,
+                "The AI service interrupted the response.",
+              ),
+        );
+      }
     },
-  },
-});
+
+    cancel(reason) {
+      void reader.cancel(reason);
+    },
+  });
+}
+
+/**
+ * One-shot structured JSON generation using Gemini responseSchema.
+ */
+export async function geminiStructured<T>(opts: {
+  system: string;
+  prompt: string;
+  schema: Record<string, unknown>;
+  key: string;
+}): Promise<T> {
+  const request = () =>
+    fetch(
+      `${BASE}/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(
+        opts.key,
+      )}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: opts.system }],
+          },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: opts.prompt }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: opts.schema,
+          },
+        }),
+      },
+    );
+
+  // Gemini can occasionally return transient 503/429 responses.
+  // Retry briefly before surfacing the error.
+  let res = await request();
+
+  for (
+    let attempt = 0;
+    attempt < 2 &&
+    (res.status === 503 || res.status === 429);
+    attempt++
+  ) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, 800 * (attempt + 1)),
+    );
+
+    res = await request();
+  }
+
+  await assertOk(res, "structured");
+
+  const json = (await res.json()) as {
+    candidates?: {
+      content?: {
+        parts?: {
+          text?: string;
+        }[];
+      };
+    }[];
+  };
+
+  const text = (json.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? "")
+    .join("")
+    .trim();
+
+  if (!text) {
+    throw new GeminiError(
+      500,
+      "The AI service returned an empty response.",
+    );
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    console.error("Gemini structured JSON parse error", {
+      error,
+      responsePreview: text.slice(0, 500),
+    });
+
+    throw new GeminiError(
+      500,
+      "The AI service returned invalid structured data.",
+    );
+  }
+}
