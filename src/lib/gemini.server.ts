@@ -391,4 +391,5 @@ export async function geminiStructured<T>(opts: {
       "The AI service returned invalid structured data.",
     );
   }
-}
+      }
+          
