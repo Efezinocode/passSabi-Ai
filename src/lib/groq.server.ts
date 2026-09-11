@@ -1,6 +1,12 @@
 // Groq (OpenAI-compatible) client — server only.
 // Preferred provider when GROQ_API_KEY is configured; call sites fall back to
 // Gemini, then the Lovable AI Gateway.
+//
+// ContentPart/ChatMessage now live in ./chat-types so the browser chat UI can
+// use the same types without ever importing this server-only file.
+
+import type { ContentPart, ChatMessage } from "./chat-types";
+export type { ContentPart, ChatMessage };
 
 export const GROQ_MODEL = "openai/gpt-oss-120b";
 
@@ -10,12 +16,6 @@ export function groqKey(): string | undefined {
   const key = process.env["GROQ_API_KEY"];
   return key && key.trim() ? key.trim() : undefined;
 }
-
-export type ContentPart =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
-
-type ChatMessage = { role: "user" | "assistant"; content: string | ContentPart[] };
 
 export class GroqError extends Error {
   status: number;
