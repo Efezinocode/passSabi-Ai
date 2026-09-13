@@ -386,10 +386,9 @@ export async function geminiStructured<T>(opts: {
       responsePreview: text.slice(0, 500),
     });
 
-    throw new GeminiError(
+  throw new GeminiError(
       500,
       "The AI service returned invalid structured data.",
     );
   }
-      }
-          
+}
