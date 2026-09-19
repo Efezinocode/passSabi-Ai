@@ -85,9 +85,9 @@ function AboutPage() {
         </article>
 
         <article className="surface-card p-6">
-          <h2 className="text-lg font-semibold">Founded by Uzezi Great Efezino</h2>
+          <h2 className="text-lg font-semibold">Founded by Efezino Great Uzezi</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            PassSabi AI was founded by Uzezi Great Efezino, a young technology enthusiast
+            PassSabi AI was founded by Efezino Great Uzezi, a young technology enthusiast
             interested in programming, artificial intelligence, education, and building practical
             solutions to real-world problems.
           </p>
