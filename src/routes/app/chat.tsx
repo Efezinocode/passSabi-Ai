@@ -349,36 +349,43 @@ function ChatPage() {
       </button>
 
       {sessions?.map((session) => (
-        <div
-          key={session.id}
-          className={cn(
-            "group flex items-center rounded-xl transition-colors",
-            sessionId === session.id ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/60",
-          )}
-        >
-          <button
-            onClick={() => navigate({ search: { session: session.id }, replace: true })}
-            className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm"
-          >
-            {session.title}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void deleteSession(session.id, session.title);
-            }}
-            disabled={deletingId === session.id}
-            aria-label={`Delete "${session.title}"`}
-            className="mr-1 shrink-0 rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        </div>
-      ))}
-    </nav>
-  );
+  <div
+    key={session.id}
+    className={cn(
+      "group flex items-center rounded-xl transition-colors",
+      sessionId === session.id
+        ? "bg-accent text-accent-foreground"
+        : "text-muted-foreground hover:bg-accent/60",
+    )}
+  >
+    <button
+      onClick={() =>
+        navigate({
+          search: { session: session.id },
+          replace: true,
+        })
+      }
+      className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm"
+    >
+      {session.title}
+    </button>
 
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        void deleteSession(session.id, session.title);
+      }}
+      disabled={deletingId === session.id}
+      aria-label={`Delete "${session.title}"`}
+      className="mr-1 shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+    >
+      <Trash2 className="size-4" />
+    </button>
+  </div>
+))}
+
+  
   return (
     <div className="flex h-[100dvh] flex-col md:h-screen">
       <header className="flex items-center gap-2 border-b border-border px-4 py-3">
